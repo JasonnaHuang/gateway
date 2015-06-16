@@ -13,7 +13,7 @@
 int fd1,fd2,fd3,fd4,fd5;
 void gpio_init(void)
 {
-    int ret;
+//    int ret;
     fd1 = open("/sys/class/gpio/gpio53/value",O_RDWR);
     if(fd1 < 0)
     {
