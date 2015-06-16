@@ -67,9 +67,11 @@ typedef struct _search_info_t {
    
 extern dev_info_t stDevInfo;
 extern dev_info_t remoteDevInfo;
+extern search_info_t searchInfo;
 
+void init_zlg_zm516x(void);
 void read_local_cfg(void);
-void send_data_to_remote_node(unsigned char *destAddr,unsigned char *data,int len);
+//void send_data_to_remote_node(unsigned char *destAddr,unsigned char *data,int len);
 //////////////////////////////////
 void set_channel_nv(unsigned char nv);
 void search_node(void);
@@ -88,5 +90,5 @@ unsigned short read_temporary_adc_value(unsigned short DstAddr);
 void enter_sleep_mode(void);
 void set_temporary_cast_mode(cast_mode_t mode);
 unsigned char read_temporary_node_rssi(unsigned short DstAddr);
-
+void send_data_to_remote_node(unsigned short destAddr,unsigned char *data,int len);
 #endif

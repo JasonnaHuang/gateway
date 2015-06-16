@@ -21,7 +21,7 @@
 #define CFG_CMD_NONVOLATILE	{0XAB,0XBC,0XCD}
 #define CFG_CMD_VOLATILE	{0XDE,0XDF,0XEF}
 
-const unsigned char broadcastAddr[2] = {0xff,0xff};
+const unsigned short broadcastAddr = 0xffff;
 
 void write_local_cfg(void);
 
@@ -29,6 +29,7 @@ static int n_com_port = ttyO1;
 dev_info_t stDevInfo;
 dev_info_t remoteDevInfo;
 search_info_t searchInfo;
+
 void serialport_init(void)
 {
         int ret = -1;
@@ -42,6 +43,15 @@ void serialport_init(void)
         }
 }
 
+void init_zlg_zm516x(void)
+{
+	gpio_init();
+    sleep_zm516x(1);
+    serialport_init();
+    usleep(100000);
+    sleep_zm516x(0);
+}
+
 void read_local_cfg(void)
 {
     unsigned char wbuf[255],rbuf[255];
@@ -52,11 +62,6 @@ void read_local_cfg(void)
 
     int i;
     
-    gpio_init();
-    sleep_zm516x(1);
-    serialport_init();
-    usleep(100000);
-    sleep_zm516x(0);
     wbuf[0] = 0xab;
     wbuf[1] = 0xbc;
     wbuf[2] = 0xcd;
@@ -67,7 +72,7 @@ void read_local_cfg(void)
         WriteComPort(wbuf, 5);
         printf("get device info\r\n");
         usleep(100000);
-        printf("read begin\r\n");
+        printf("------read begin-----------------\r\n");
         len = ReadComPort(rbuf,255);
         printf("device response data length is %d\r\n",len);
     }
@@ -161,7 +166,7 @@ void read_local_cfg(void)
         printf("unknown\r\n");
         break;
     }
-	printf("-------end-of-device-info--------------");
+	printf("-------end-of-device-info------------\r\n");
     printf("write local cfg\r\n");
     write_local_cfg();
 }
@@ -190,19 +195,20 @@ void write_local_cfg(void)
     }
     buf[6 + 65] = sum;
 
-    while(len != 7)
+    do
     {
 		printf("start to write local cfg...\r\n");
         WriteComPort(buf, 6 + 65 + 1);
         usleep(10000);
         len = ReadComPort(responsebuf,10);
-    }
+    }while(len != 7);
+	
     usleep(100000);
     reset_zm516x();
     usleep(100000);
-    printf("write local config success\r\n");
+    printf("---write local config success---\r\n");
 }
-
+/*
 void send_data_to_remote_node(unsigned char *destAddr,unsigned char *data,int len)
 {
     unsigned char responslen = 0;
@@ -240,6 +246,7 @@ void send_data_to_remote_node(unsigned char *destAddr,unsigned char *data,int le
     WriteComPort(data, len);
     printf("Send over \r\n");
 }
+*/
 
 void set_channel_nv(unsigned char nv)
 {
@@ -287,13 +294,12 @@ void search_node(void)
     for(i = 0;i < 4; i++)
 	sum += wbuf[i];
     wbuf[4] = sum;
-
-    while(rlen != 13)
+    do
     {
 		printf("start to search node...\r\n");
     	WriteComPort(wbuf, 5);
 		rlen = ReadComPort(rbuf,15);
-    }
+    }while(rlen != 13);
     if(rbuf[0] == 0xab && rbuf[1] == 0xbc && rbuf[2] == 0xcd)
     { 
 		if(rbuf[3] == enSearchNode)
@@ -468,7 +474,7 @@ void write_remote_cfg(unsigned short DstAddr, dev_info_t *DevInfo )
 	
 	while(rlen != 7)
     {
-		printf("start to write remote cfg...\r\n");
+		printf("start to write remote node 0x%04x cfg...\r\n",DstAddr);
     	WriteComPort(wbuf, 72);
 		rlen = ReadComPort(rbuf,10);
     }
@@ -833,4 +839,49 @@ unsigned char read_temporary_node_rssi(unsigned short DstAddr)
 	}
 	printf("read node's rssi error...\r\n");
 	return 0;
+}
+
+void send_data_to_remote_node(unsigned short destAddr,unsigned char *data,int len)
+{
+    unsigned char responslen = 0;
+    unsigned char buf[10],responsebuf[10];
+	
+    if(destAddr == broadcastAddr)
+    {
+		set_temporary_cast_mode(broadcast);
+		/*
+        buf[0] = 0xde;
+        buf[1] = 0xdf;
+        buf[2] = 0xef;
+        buf[3] = enSetUnicastOrBroadcast;
+        buf[4] = 0x01;
+        printf("Send broadcast\r\n");
+        while(responslen != 7)
+        {
+            WriteComPort(buf, 5);
+            responslen = ReadComPort(responsebuf,10);
+        }*/
+    }
+    else
+    {
+		set_temporary_DestAddr(destAddr);
+		/*
+        buf[0] = 0xde;
+        buf[1] = 0xdf;
+        buf[2] = 0xef;
+        buf[3] = enSetDestAddr;
+		buf[4] = destAddr >> 8;
+		buf[5] = destAddr;
+        //memcpy(&buf[4],&temp,2);
+        printf("Send unicast\r\n");
+		
+        do {
+            WriteComPort(buf,6);
+            usleep(10000);
+            responslen = ReadComPort(responsebuf,10);
+        }while(responslen != 5);*/
+    }
+	
+    WriteComPort(data, len);
+    printf("Send over \r\n");
 }
