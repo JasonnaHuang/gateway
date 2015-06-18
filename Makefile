@@ -1,6 +1,6 @@
 EXEC = gateway
-OBJS = main.o uart_hal.o listener.o zlg_cmd.o gpio.o serial.o
-SRC  = main.c uart_hal.c listener.c zlg_cmd.c gpio.c serial.c
+OBJS = main.o uart_hal.o listener.o zlg_cmd.o gpio.o serial.o menu.o
+SRC  = main.c uart_hal.c listener.c zlg_cmd.c gpio.c serial.c menu.c
 
 CC = arm-none-linux-gnueabi-gcc
 CFLAGS += -O2 -Wall 
