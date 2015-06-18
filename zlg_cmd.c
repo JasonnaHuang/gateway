@@ -72,7 +72,7 @@ void read_local_cfg(void)
         WriteComPort(wbuf, 5);
         printf("get device info\r\n");
         usleep(100000);
-        printf("------read begin-----------------\r\n");
+        printf("--------------read begin-----------------\r\n");
         len = ReadComPort(rbuf,255);
         printf("device response data length is %d\r\n",len);
     }
@@ -102,41 +102,41 @@ void read_local_cfg(void)
         sprintf(str2,"%02x",stDevInfo.devPanid[i]&0x0ff);
         strcat(str1,str2);
     }
-    printf("panid = 0x%s\r\n",str1);
+    printf("panid : 0x%s\r\n",str1);
     strcpy(str1,"");
     for(i = 0;i < 2;i++)
     {
         sprintf(str2,"%02x",stDevInfo.devLoacalNetAddr[i]&0x0ff);
         strcat(str1,str2);
     }
-    printf("loacal net address is 0x%s\r\n",str1);
+    printf("loacal net address is: 0x%s\r\n",str1);
     strcpy(str1,"");
     for(i = 0;i < 8;i++)
     {
         sprintf(str2,"%02x",stDevInfo.devLoacalIEEEAddr[i]&0x0ff);
         strcat(str1,str2);
     }
-    printf("loacal IEEE address is 0x%s\r\n",str1);
+    printf("loacal IEEE address is: 0x%s\r\n",str1);
     strcpy(str1,"");
     for(i = 0;i < 2;i++)
     {
         sprintf(str2,"%02x",stDevInfo.devDestNetAddr[i]&0x0ff);
         strcat(str1,str2);
     }
-    printf("dest net address is 0x%s\r\n",str1);
+    printf("dest net address is: 0x%s\r\n",str1);
     strcpy(str1,"");
     for(i = 0;i < 8;i++)
     {
         sprintf(str2,"%02x",stDevInfo.devDestIEEEAddr[i]&0x0ff);
         strcat(str1,str2);
     }
-    printf("dest IEEE address is 0x%s\r\n",str1);
+    printf("dest IEEE address is: 0x%s\r\n",str1);
 
     
     
-    printf("Device power level = %d\r\n",stDevInfo.devPowerLevel);
-    printf("Retry num = %d\r\n",stDevInfo.devRetryNum);
-    printf("Retry time slot = %d ms\r\n",stDevInfo.devTranTimeout * 10);
+    printf("Device power level is: %d\r\n",stDevInfo.devPowerLevel);
+    printf("Retry num is: %d\r\n",stDevInfo.devRetryNum);
+    printf("Retry time slot is: %d ms\r\n",stDevInfo.devTranTimeout * 10);
 
     printf("Device uart serial baudrate is :");
     switch(stDevInfo.devSerialRate)
@@ -166,9 +166,9 @@ void read_local_cfg(void)
         printf("unknown\r\n");
         break;
     }
-	printf("-------end-of-device-info------------\r\n");
-    printf("write local cfg\r\n");
-    write_local_cfg();
+	printf("----------end-of-device-info--------------\r\n");
+    //printf("write local cfg\r\n");
+    //write_local_cfg();
 }
 
 void write_local_cfg(void)
@@ -206,7 +206,7 @@ void write_local_cfg(void)
     usleep(100000);
     reset_zm516x();
     usleep(100000);
-    printf("---write local config success---\r\n");
+    printf("--------write local config success------\r\n");
 }
 /*
 void send_data_to_remote_node(unsigned char *destAddr,unsigned char *data,int len)
@@ -342,7 +342,7 @@ void get_remote_info(unsigned short DstAddr)
     wbuf[6] = sum;
     while(rlen != 74)
     {
-		printf("start get remote info...\r\n");
+		printf("start get remote node 0x%04x info...\r\n",DstAddr);
     	WriteComPort(wbuf, 7);
 		usleep(10000);
 		rlen = ReadComPort(rbuf,80);
@@ -510,6 +510,7 @@ void reset_node(unsigned short DstAddr)
     wbuf[8] = sum;
     
     WriteComPort(wbuf, 9);
+	printf("have reset node 0x%04x\r\n",DstAddr);
 }
 
 void restore_factory_settings(unsigned short DstAddr)
@@ -530,6 +531,7 @@ void restore_factory_settings(unsigned short DstAddr)
     wbuf[8] = sum;
     
     WriteComPort(wbuf, 9);
+	printf("have restore 0x%04x node factory settings\r\n",DstAddr);
 }
 
 void set_temporary_channel(unsigned char channel)
@@ -543,7 +545,7 @@ void set_temporary_channel(unsigned char channel)
 	wbuf[4] = channel;
 	do
 	{
-		printf("start to set channel to %d\r\n",channel);
+		printf("start to set temp channel to %d\r\n",channel);
 		WriteComPort(wbuf, 5);
 		rlen = ReadComPort(rbuf,10);
 	}while(rlen != 5);
@@ -553,12 +555,12 @@ void set_temporary_channel(unsigned char channel)
 		{
 			if(rbuf[4] == 0x00)
 			{
-				printf("set channel success...\r\n");
+				printf("set temp channel success...\r\n");
 				return;
 			}
 		}
 	}
-	printf("set channel error...\r\n"); 
+	printf("set temp channel error...\r\n"); 
 }
 
 void set_temporary_DestAddr(unsigned short DestAddr)
