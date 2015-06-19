@@ -13,7 +13,7 @@
 int fd1,fd2,fd3,fd4,fd5;
 void gpio_init(void)
 {
-//    int ret;
+    int ret;
     fd1 = open("/sys/class/gpio/gpio53/value",O_RDWR);
     if(fd1 < 0)
     {
@@ -40,10 +40,10 @@ void gpio_init(void)
         printf("Open gpio45 failed!\r\n");
     }
 
-    write(fd1, "1", 1); // DEF
-    write(fd2, "1", 1); // SLEEP
-    write(fd3, "1", 1); // WAKEUP
-    write(fd4, "1", 1); // RESET
+    ret = write(fd1, "1", 1); // DEF
+    ret = write(fd2, "1", 1); // SLEEP
+    ret = write(fd3, "1", 1); // WAKEUP
+    ret = write(fd4, "1", 1); // RESET
 
     /*ret = read(gpio_fd,buff,10);
     if( ret == -1 )
@@ -53,28 +53,32 @@ void gpio_init(void)
 
 void sleep_zm516x(unsigned char state)
 {
+	int ret;
     if(state)
     {
-        write(fd2, "0", 1); // SLEEP
-        write(fd3, "1", 1); // WAKEUP
+        ret = write(fd2, "0", 1); // SLEEP
+        ret = write(fd3, "1", 1); // WAKEUP
     }
     else
     {
-        write(fd2, "1", 1); // SLEEP
-        write(fd3, "0", 1); // WAKEUP
+        ret = write(fd2, "1", 1); // SLEEP
+        ret = write(fd3, "0", 1); // WAKEUP
     }
 }
 
 void reset_params_zm516x(void)
 {
-    write(fd1, "1", 1); // DEF
+	int ret;
+	
+    ret = write(fd1, "1", 1); // DEF
 }
 void reset_zm516x(void)
 {
-    write(fd4, "0", 1);
-    write(fd1, "0", 1); // DEF
+	int ret;
+    ret = write(fd4, "0", 1);
+    ret = write(fd1, "0", 1); // DEF
     usleep(100000);
-    write(fd4, "1", 1);
+    ret = write(fd4, "1", 1);
     usleep(100000);
     printf("reset zm516x\r\n");
 }

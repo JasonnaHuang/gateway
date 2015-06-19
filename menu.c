@@ -6,7 +6,7 @@
 #include "zlg_cmd.h"
 #include "serial.h"
 
-unsigned char menu[] = "\r\n\
+const char menu[] = "\r\n\
 +********************** ZLG CMD HELP ************************+\r\n\
 +--- Description ----+--CMD --+--- Demo ----+-- Remark------ +\r\n\
 | read local cfg     | AT+1   | AT+1        |                |\r\n\
@@ -27,20 +27,16 @@ unsigned char menu[] = "\r\n\
 | help               | ?      |             |                |\r\n\
 +--------------------+--------+-------------+----------------+\r\n";
 
-void send_data_test_thread(void)
+void menu_thread(void)
 {
-	unsigned char wbuf[255];
+	char wbuf[255];
 	
 	while(1)
 	{
 		if(fgets(wbuf,255,stdin))
 		{
-			unsigned short buffer;
 			wbuf[strlen(wbuf)-1] = '\0';
-			//printf("input wbuf is :%s,sizeof wbuf is:%d\r\n",wbuf,strlen(wbuf));
-			//printf("atoi(wbuf[strlen(wbuf)-3]) %s is %d\r\n",wbuf,atoi(&wbuf[strlen(wbuf)-3]));
-			//sscanf(&wbuf[strlen(wbuf)-4],"%04x",&buffer);
-			//printf("buffer is 0x%04x\r\n",buffer);
+
 			if(!strncmp(wbuf,"AT+1",4))
 			{
 				read_local_cfg();
@@ -55,10 +51,8 @@ void send_data_test_thread(void)
 			}
 			else if(!strncmp(wbuf,"AT+4",4))
 			{
-				unsigned short temp;
-				unsigned char *string = NULL;
-				string = &wbuf[strlen(wbuf)-6];
-				if(!strncmp(string,"0x",2))
+				unsigned int temp;
+				if(!strncmp(&wbuf[strlen(wbuf)-6],"0x",2))
 				{
 					sscanf(&wbuf[strlen(wbuf)-4],"%04x",&temp);
 					get_remote_info(temp);					
@@ -68,12 +62,10 @@ void send_data_test_thread(void)
 			}
 			else if(!strncmp(wbuf,"AT+5",4))
 			{
-				unsigned short temp;
-				unsigned char *string = NULL;
-				string = &wbuf[strlen(wbuf)-6];
-				if(!strncmp(string,"0x",2))
+				unsigned int temp;
+				if(!strncmp(&wbuf[strlen((const char *)wbuf)-6],"0x",2))
 				{
-					sscanf(&wbuf[strlen(wbuf)-4],"%04x",&temp);
+					sscanf(&wbuf[strlen((const char *)wbuf)-4],"%04x",&temp);
 					reset_node(temp);					
 				}
 				else
@@ -82,10 +74,8 @@ void send_data_test_thread(void)
 			}
 			else if(!strncmp(wbuf,"AT+6",4))
 			{
-				unsigned short temp;
-				unsigned char *string = NULL;
-				string = &wbuf[strlen(wbuf)-6];
-				if(!strncmp(string,"0x",2))
+				unsigned int temp;
+				if(!strncmp(&wbuf[strlen(wbuf)-6],"0x",2))
 				{
 					sscanf(&wbuf[strlen(wbuf)-4],"%04x",&temp);
 					restore_factory_settings(temp);					
@@ -99,7 +89,7 @@ void send_data_test_thread(void)
 			}
 			else if(!strncmp(wbuf,"AT+8",4))
 			{
-				unsigned short temp;
+				unsigned int temp;
 				if(!strncmp(&wbuf[strlen(wbuf)-6],"0x",2))
 				{
 					sscanf(&wbuf[strlen(wbuf)-4],"%04x",&temp);
@@ -110,8 +100,8 @@ void send_data_test_thread(void)
 			}
 			else if(!strncmp(wbuf,"AT+9",4))
 			{
-				unsigned short temp1;
-				unsigned char temp2;
+				unsigned int temp1;
+				unsigned int temp2;
 				if(!strncmp(&wbuf[strlen(wbuf)-11],"0x",2) && !strncmp(&wbuf[strlen(wbuf)-4],"0x",2))
 				{
 					sscanf(&wbuf[strlen(wbuf)-9],"%04x",&temp1);
@@ -123,7 +113,7 @@ void send_data_test_thread(void)
 			}
 			else if(!strncmp(wbuf,"AT+A",4))
 			{
-				unsigned short temp;
+				unsigned int temp;
 				if(!strncmp(&wbuf[strlen(wbuf)-6],"0x",2))
 				{
 					sscanf(&wbuf[strlen(wbuf)-4],"%04x",&temp);
@@ -134,8 +124,8 @@ void send_data_test_thread(void)
 			}
 			else if(!strncmp(wbuf,"AT+B",4))
 			{
-				unsigned short temp1;
-				unsigned char temp2;
+				unsigned int temp1;
+				unsigned int temp2;
 				if(!strncmp(&wbuf[strlen(wbuf)-11],"0x",2) && !strncmp(&wbuf[strlen(wbuf)-4],"0x",2))
 				{
 					sscanf(&wbuf[strlen(wbuf)-9],"%04x",&temp1);
@@ -147,7 +137,7 @@ void send_data_test_thread(void)
 			}
 			else if(!strncmp(wbuf,"AT+C",4))
 			{
-				unsigned short temp;
+				unsigned int temp;
 				if(!strncmp(&wbuf[strlen(wbuf)-6],"0x",2))
 				{
 					sscanf(&wbuf[strlen(wbuf)-4],"%04x",&temp);
@@ -158,22 +148,22 @@ void send_data_test_thread(void)
 			}
 			else if(!strncmp(wbuf,"AT+D",4))
 			{
-				unsigned char temp;
-				if(!strncmp(&wbuf[strlen(wbuf)-4],"0x",2))
+				unsigned int temp;
+				if(!strncmp((const char *)&wbuf[strlen(wbuf)-4],"0x",2))
 				{
 					sscanf(&wbuf[strlen(wbuf)-2],"%02x",&temp);
-					set_temporary_cast_mode(temp);					
+					set_temporary_cast_mode((unsigned char)temp);					
 				}
 				else
 					printf("paramter error...\r\n");				
 			}
 			else if(!strncmp(wbuf,"AT+S",4))
 			{
-				unsigned short temp;
+				unsigned int temp;
 				if(!strncmp(&wbuf[5],"0x",2) && (strlen(wbuf) > 12))
 				{
 					sscanf(&wbuf[7],"%04x",&temp);
-					send_data_to_remote_node(temp,&wbuf[12],strlen(wbuf)-12);					
+					send_data_to_remote_node(temp,(unsigned char *)&wbuf[12],strlen(wbuf)-12);					
 				}
 				else
 					printf("paramter error...\r\n");
@@ -186,12 +176,12 @@ void send_data_test_thread(void)
 				//printf("zlg_zm516x > ");
 				//continue;
 			}
-		    else if(!strncmp(wbuf,"send",4))
+		    else if(!strncmp((const char *)wbuf,"send",4))
 			{
-				WriteComPort(&wbuf[5],strlen(wbuf)-5);
+				WriteComPort((unsigned char *)&wbuf[5],strlen(wbuf)-5);
 			}
 			else
-				printf("command not found!press \"?\" to check command\r\n");
+				printf("Command not found! Input \"?\" to check commands\r\n");
 			memset(wbuf,0x0,strlen(wbuf) + 1);
 			printf("zlg_zm516x > ");
 		}

@@ -845,43 +845,13 @@ unsigned char read_temporary_node_rssi(unsigned short DstAddr)
 
 void send_data_to_remote_node(unsigned short destAddr,unsigned char *data,int len)
 {
-    unsigned char responslen = 0;
-    unsigned char buf[10],responsebuf[10];
-	
     if(destAddr == broadcastAddr)
     {
 		set_temporary_cast_mode(broadcast);
-		/*
-        buf[0] = 0xde;
-        buf[1] = 0xdf;
-        buf[2] = 0xef;
-        buf[3] = enSetUnicastOrBroadcast;
-        buf[4] = 0x01;
-        printf("Send broadcast\r\n");
-        while(responslen != 7)
-        {
-            WriteComPort(buf, 5);
-            responslen = ReadComPort(responsebuf,10);
-        }*/
     }
     else
     {
 		set_temporary_DestAddr(destAddr);
-		/*
-        buf[0] = 0xde;
-        buf[1] = 0xdf;
-        buf[2] = 0xef;
-        buf[3] = enSetDestAddr;
-		buf[4] = destAddr >> 8;
-		buf[5] = destAddr;
-        //memcpy(&buf[4],&temp,2);
-        printf("Send unicast\r\n");
-		
-        do {
-            WriteComPort(buf,6);
-            usleep(10000);
-            responslen = ReadComPort(responsebuf,10);
-        }while(responslen != 5);*/
     }
 	
     WriteComPort(data, len);
