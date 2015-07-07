@@ -12,11 +12,14 @@ typedef enum devTypeCmd {
 }devTypeCmd_t;
 
 enum cfg_cmd {
+	cmdCheckIn = 0x00,
 	cmdAckCheckIn = 0x01,
-	cmdChangNodeTye = 0x02,
-	cmdChangPanidChannel = 0x04,
+	cmdChangeNodeType = 0x02,
+	cmdAckChangeNodeType = 0x03,
+	cmdChangePanidChannel = 0x04,
 	cmdAllNodeReset = 0x05,
-	cmdLinkTest = 0x06
+	cmdLinkTest = 0x06,
+	cmdAckLinkTest = 0x07
 };
 
 enum sen_cmd {
@@ -40,9 +43,11 @@ enum motor_cmd {
 	cmdReverse = 0x02
 };
 
-void ackRegisterNetwork(unsigned char *IEEEAddress,unsigned short NetAddress,ackCmd_t cmd);
-void changeNodeType(unsigned char *IEEEaddress,devTypeCmd_t deviceType);
-void changePanidChannel(unsigned short panid,unsigned short channel);
+void communicate_thread(void);
+
+void ackRegisterNetwork(unsigned short NetAddress,ackCmd_t cmd);
+void changeNodeType(devTypeCmd_t deviceType);
+void changePanidChannel(unsigned short panid,unsigned char channel);
 void resetAllNode(void);
 void testLink(void);
 void startSensorCalibration(void);
