@@ -2,9 +2,11 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <pthread.h>
 #include "menu.h"
 #include "zlg_cmd.h"
 #include "serial.h"
+#include "zlg_protocol.h"
 
 const char menu[] = "\r\n\
 +********************** ZLG CMD HELP ************************+\r\n\
@@ -25,6 +27,13 @@ const char menu[] = "\r\n\
 | send to remote node| AT+S   | AT+S 0x2002 hello |          |\r\n\
 | send               | send   | send hello  |                |\r\n\
 | help               | ?      |             |                |\r\n\
++--------------------+--------+-------------+----------------+\r\n\
+| link test          | AT+T   | AT+T        |                |\r\n\
+| change Node Type   | AT+N   | AT+N 0x00   | router:0x01    |\r\n\
+| changePanidChannel | AT+P   | AT+P 0x1001 25 |             |\r\n\
+| reset all node     | AT+R   | AT+R        |                |\r\n\
+| test beep          | beep   | beep 0x2001 1 |  0:silence   |\r\n\
+| test leds          | leds   | leds 0x2001 0xff|            |\r\n\
 +--------------------+--------+-------------+----------------+\r\n";
 
 void menu_thread(void)
@@ -35,6 +44,7 @@ void menu_thread(void)
 	{
 		if(fgets(wbuf,255,stdin))
 		{
+			pthread_mutex_lock(&mut);
 			wbuf[strlen(wbuf)-1] = '\0';
 
 			if(!strncmp(wbuf,"AT+1",4))
@@ -47,7 +57,10 @@ void menu_thread(void)
 			}
 			else if(!strncmp(wbuf,"AT+3",4))
 			{
-				set_channel_nv(atoi(&wbuf[strlen(wbuf)-3]));
+				if(!strncmp(&wbuf[strlen(wbuf)-3]," ",1))
+					set_channel_nv(atoi(&wbuf[strlen(wbuf)-3]));
+				else
+					printf("paramter error...\r\n");							
 			}
 			else if(!strncmp(wbuf,"AT+4",4))
 			{
@@ -180,10 +193,72 @@ void menu_thread(void)
 			{
 				WriteComPort((unsigned char *)&wbuf[5],strlen(wbuf)-5);
 			}
+			else if(!strncmp(wbuf,"AT+T",4))
+			{
+				testLink();
+			}
+			else if(!strncmp(wbuf,"AT+N",4))
+			{
+				unsigned int temp;
+				if(!strncmp((const char *)&wbuf[strlen(wbuf)-4],"0x",2))
+				{
+					sscanf(&wbuf[strlen(wbuf)-2],"%02x",&temp);
+					if(temp == 0x00 || temp == 0x01)
+						changeNodeType((unsigned char)temp);
+					else
+						printf("paramter error...\r\n");
+				}
+				else
+					printf("paramter error...\r\n");
+			}
+			else if(!strncmp(wbuf,"AT+P",4))
+			{
+				unsigned int temp1;
+				unsigned char temp2;
+				if(!strncmp(&wbuf[strlen(wbuf)-9],"0x",2))
+				{
+					sscanf(&wbuf[strlen(wbuf)-7],"%04x",&temp1);
+					temp2 = atoi(&wbuf[strlen(wbuf)-3]);
+					changePanidChannel(temp1,temp2);					
+				}
+				else
+					printf("paramter error...\r\n");
+			}
+			else if(!strncmp(wbuf,"AT+R",4))
+			{
+				resetAllNode();
+			}
+			else if(!strncmp(wbuf,"beep",4))
+			{
+				unsigned int temp1;
+				unsigned char temp2;
+				if(!strncmp(&wbuf[strlen(wbuf)-8],"0x",2))
+				{
+					sscanf(&wbuf[strlen(wbuf)-6],"%04x",&temp1);
+					temp2 = atoi(&wbuf[strlen(wbuf)-1]);
+					testBeep(temp1,temp2);					
+				}
+				else
+					printf("paramter error...\r\n");
+			}
+			else if(!strncmp(wbuf,"leds",4))
+			{
+				unsigned int temp1;
+				unsigned int temp2;
+				if(!strncmp(&wbuf[strlen(wbuf)-11],"0x",2) && !strncmp(&wbuf[strlen(wbuf)-4],"0x",2))
+				{
+					sscanf(&wbuf[strlen(wbuf)-9],"%04x",&temp1);
+					sscanf(&wbuf[strlen(wbuf)-2],"%02x",&temp2);
+					testLed(temp1,temp2);					
+				}
+				else
+					printf("paramter error...\r\n");
+			}
 			else
 				printf("Command not found! Input \"?\" to check commands\r\n");
-			memset(wbuf,0x0,strlen(wbuf) + 1);
+			memset(wbuf,0x0,strlen(wbuf) + 1);//last is '\n'
 			printf("zlg_zm516x > ");
+			pthread_mutex_unlock(&mut);
 		}
 	}
 }
