@@ -2,13 +2,13 @@
 #include "zlg_cmd.h"
 #include <string.h>
 #include "gpio.h"
-
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <asm/termios.h>
-
+//#include <pthread.h>
 #include "serial.h"
 
 #define ttyO0  0
@@ -17,9 +17,6 @@
 #define ttyO3  3
 #define ttyO4  4
 #define ttyO5  5
-
-#define CFG_CMD_NONVOLATILE	{0XAB,0XBC,0XCD}
-#define CFG_CMD_VOLATILE	{0XDE,0XDF,0XEF}
 
 const unsigned short broadcastAddr = 0xffff;
 
@@ -45,7 +42,7 @@ void serialport_init(void)
 
 void init_zlg_zm516x(void)
 {
-	gpio_init();
+    gpio_init();
     sleep_zm516x(1);
     serialport_init();
     usleep(100000);
@@ -67,18 +64,18 @@ void read_local_cfg(void)
     wbuf[2] = 0xcd;
     wbuf[3] = enReadLoacalCfg;
     wbuf[4] = wbuf[0] + wbuf[1] + wbuf[2] + wbuf[3];
-    while(len < 65)
-    {
+    do{
+        printf("get device info...\r\n");
         WriteComPort(wbuf, 5);
-        printf("get device info\r\n");
-        usleep(100000);
-        printf("--------------read begin-----------------\r\n");
+        //usleep(100000);
         len = ReadComPort(rbuf,255);
         printf("device response data length is %d\r\n",len);
-    }
+    }while(len < 65);
     
     memcpy(&stDevInfo,&rbuf[4],65);
     
+
+    printf("--------------read begin-----------------\r\n");
     // display device info
     printf("Device name is:%s\r\n",stDevInfo.devName);
     printf("Device password is:%s\r\n",stDevInfo.devPwd);
@@ -197,7 +194,7 @@ void write_local_cfg(void)
 
     do
     {
-		printf("start to write local cfg...\r\n");
+	printf("start to write local cfg...\r\n");
         WriteComPort(buf, 6 + 65 + 1);
         usleep(10000);
         len = ReadComPort(responsebuf,10);
@@ -286,7 +283,7 @@ void search_node(void)
     unsigned char i, sum = 0;
     unsigned char wbuf[5],rbuf[13];
     unsigned char rlen = 0;
-
+    //char inputbuf[2];
     wbuf[0] = 0xab;
     wbuf[1] = 0xbc;
     wbuf[2] = 0xcd;
@@ -297,8 +294,15 @@ void search_node(void)
     do
     {
 		printf("start to search node...\r\n");
-    	WriteComPort(wbuf, 5);
-		rlen = ReadComPort(rbuf,15);
+    	        WriteComPort(wbuf, 5);
+		/*if(fgets(inputbuf,2,stdin))
+		{
+			inputbuf[strlen(inputbuf)] = '\0';
+			if(!strncmp((const char *)inputbuf,"q",1) || !strncmp((const char *)inputbuf,"c",1))
+		 		return;
+		}*/
+		//usleep(10000);
+		rlen = ReadComPort(rbuf,20);
     }while(rlen != 13);
     if(rbuf[0] == 0xab && rbuf[1] == 0xbc && rbuf[2] == 0xcd)
     { 
@@ -326,9 +330,9 @@ void get_remote_info(unsigned short DstAddr)
 {
     unsigned char i,sum = 0;
     unsigned char wbuf[7],rbuf[74];
-	unsigned char rlen = 0;
+    unsigned char rlen = 0;
 	
-	char str1[33];
+    char str1[33];
     char str2[10];
 	
     wbuf[0] = 0xab;
@@ -340,28 +344,28 @@ void get_remote_info(unsigned short DstAddr)
     for(i = 0; i < 6; i++)
       sum += wbuf[i];
     wbuf[6] = sum;
-    while(rlen != 74)
-    {
+    do{
 		printf("start get remote node 0x%04x info...\r\n",DstAddr);
-    	WriteComPort(wbuf, 7);
-		usleep(10000);
+    		WriteComPort(wbuf, 7);
+	//	usleep(100000);
 		rlen = ReadComPort(rbuf,80);
-    }
-	if((rbuf[0] == 0xab)&&(rbuf[1] == 0xbc)&&(rbuf[2] == 0xcd))
+		printf("response_len is:%d\r\n",rlen);
+    }while(rlen < 74);
+    if((rbuf[0] == 0xab)&&(rbuf[1] == 0xbc)&&(rbuf[2] == 0xcd))
     {
 		if(rbuf[3] == enGetRemoteInfo)
 		{
 			memcpy(&remoteDevInfo,&rbuf[4],sizeof(dev_info_t));
 		}
-	}
-	else
-	{	
+    }
+    else
+    {	
 		printf("get info failed!\r\n");
 		return;
-	}
+    }
 	
 	
-	memcpy(&remoteDevInfo,&rbuf[4],sizeof(dev_info_t));   
+    memcpy(&remoteDevInfo,&rbuf[4],sizeof(dev_info_t));   
     printf("----remote device info is below:-----\r\n");
     printf("Device name is:%s\r\n",remoteDevInfo.devName);
     printf("Device password is:%s\r\n",remoteDevInfo.devPwd);
@@ -457,7 +461,7 @@ void write_remote_cfg(unsigned short DstAddr, dev_info_t *DevInfo )
 {
     unsigned char i,sum = 0;
     unsigned char wbuf[72],rbuf[7];
-	unsigned char rlen = 0;
+    unsigned char rlen = 0;
 	
     wbuf[0] = 0xab;
     wbuf[1] = 0xbc;
@@ -472,13 +476,13 @@ void write_remote_cfg(unsigned short DstAddr, dev_info_t *DevInfo )
     }
     wbuf[6 + 65] = sum;
 	
-	while(rlen != 7)
-    {
+    do{
 		printf("start to write remote node 0x%04x cfg...\r\n",DstAddr);
-    	WriteComPort(wbuf, 72);
+    		WriteComPort(wbuf, 72);
+		usleep(100000);
 		rlen = ReadComPort(rbuf,10);
-    }
-	if((rbuf[0] == 0xab)&&(rbuf[1] == 0xbc)&&(rbuf[2] == 0xcd))
+    }while(rlen != 7);
+    if((rbuf[0] == 0xab)&&(rbuf[1] == 0xbc)&&(rbuf[2] == 0xcd))
     {
 		if(rbuf[3] == enModifyCfg)
 		{
@@ -488,7 +492,7 @@ void write_remote_cfg(unsigned short DstAddr, dev_info_t *DevInfo )
 				return;
 			}
 		}
-	}
+    }
     printf("write 0x%04x node cfg failed!\r\n",DstAddr);
 }
 
